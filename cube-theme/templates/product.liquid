@@ -1,0 +1,213 @@
+{% comment %}
+  Product template with advanced subscription features
+{% endcomment %}
+
+<div class="product-page" data-product-id="{{ product.id }}">
+  <div class="product-container">
+    <!-- Product Media Gallery -->
+    <div class="product-media">
+      <div class="main-image-container">
+        <img 
+          id="main-product-image" 
+          src="{{ product.featured_image | img_url: '800x800' }}" 
+          alt="{{ product.title }}"
+          class="main-image"
+        >
+      </div>
+      
+      <div class="thumbnail-carousel">
+        {% for image in product.images %}
+          <button 
+            class="thumbnail {% if forloop.first %}active{% endif %}"
+            data-image-src="{{ image | img_url: '800x800' }}"
+            data-variant-ids="{% for variant in product.variants %}{% if variant.featured_image.id == image.id %}{{ variant.id }},{% endif %}{% endfor %}"
+          >
+            <img src="{{ image | img_url: '100x100' }}" alt="{{ product.title }}">
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Product Information -->
+    <div class="product-info">
+      <h1 class="product-title">{{ product.title }}</h1>
+      
+      <!-- Purchase Options -->
+      <div class="purchase-options">
+        <h3>Choose Your Plan</h3>
+        <div class="radio-group">
+          <label class="radio-option active" data-mode="single">
+            <input type="radio" name="subscription-mode" value="single" checked>
+            <span class="radio-custom"></span>
+            <div class="option-content">
+              <strong>Single Drink Subscription</strong>
+              <p>Perfect for individual needs</p>
+            </div>
+          </label>
+          
+          <label class="radio-option" data-mode="double">
+            <input type="radio" name="subscription-mode" value="double">
+            <span class="radio-custom"></span>
+            <div class="option-content">
+              <strong>Double Drink Subscription</strong>
+              <p>Great for couples or extra servings</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Flavor Selection -->
+      <div class="flavor-selection">
+        <h3>Select Your Flavors</h3>
+        
+        <!-- Single Mode Selector -->
+        <div class="flavor-group single-mode active">
+          <label>Choose Flavor:</label>
+          <div class="flavor-swatches">
+            {% for variant in product.variants %}
+              {% if variant.option1 %}
+                <button 
+                  class="flavor-swatch {% if forloop.first %}selected{% endif %}"
+                  data-variant-id="{{ variant.id }}"
+                  data-flavor="{{ variant.option1 | downcase }}"
+                  data-image="{% if variant.featured_image %}{{ variant.featured_image | img_url: '800x800' }}{% endif %}"
+                >
+                  {% if variant.featured_image %}
+                    <img src="{{ variant.featured_image | img_url: '60x60' }}" alt="{{ variant.option1 }}">
+                  {% endif %}
+                  <span>{{ variant.option1 }}</span>
+                </button>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Double Mode Selectors -->
+        <div class="flavor-group double-mode">
+          <div class="flavor-selector">
+            <label>First Flavor:</label>
+            <div class="flavor-swatches" data-selector="first">
+              {% for variant in product.variants %}
+                {% if variant.option1 %}
+                  <button 
+                    class="flavor-swatch"
+                    data-variant-id="{{ variant.id }}"
+                    data-flavor="{{ variant.option1 | downcase }}"
+                    data-image="{% if variant.featured_image %}{{ variant.featured_image | img_url: '800x800' }}{% endif %}"
+                  >
+                    {% if variant.featured_image %}
+                      <img src="{{ variant.featured_image | img_url: '60x60' }}" alt="{{ variant.option1 }}">
+                    {% endif %}
+                    <span>{{ variant.option1 }}</span>
+                  </button>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+          
+          <div class="flavor-selector">
+            <label>Second Flavor:</label>
+            <div class="flavor-swatches" data-selector="second">
+              {% for variant in product.variants %}
+                {% if variant.option1 %}
+                  <button 
+                    class="flavor-swatch"
+                    data-variant-id="{{ variant.id }}"
+                    data-flavor="{{ variant.option1 | downcase }}"
+                    data-image="{% if variant.featured_image %}{{ variant.featured_image | img_url: '800x800' }}{% endif %}"
+                  >
+                    {% if variant.featured_image %}
+                      <img src="{{ variant.featured_image | img_url: '60x60' }}" alt="{{ variant.option1 }}">
+                    {% endif %}
+                    <span>{{ variant.option1 }}</span>
+                  </button>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Pricing -->
+      <div class="pricing-section">
+        <div class="price-display">
+          <span class="original-price" id="original-price">{{ product.price | money }}</span>
+          <span class="subscription-price" id="subscription-price"></span>
+          <span class="final-price" id="final-price"></span>
+        </div>
+        <div class="savings-badge" id="savings-badge"></div>
+      </div>
+
+      <!-- What's Included Box -->
+      <div class="whats-included">
+        <h3>What's Included</h3>
+        <div class="included-content single-mode active">
+          {% if product.metafields.custom.single_mode_benefits %}
+            {{ product.metafields.custom.single_mode_benefits }}
+          {% else %}
+            <ul>
+              <li>Monthly delivery of 30 servings</li>
+              <li>Free shipping</li>
+              <li>Cancel anytime</li>
+              <li>Nutritionist support</li>
+            </ul>
+          {% endif %}
+        </div>
+        
+        <div class="included-content double-mode">
+          {% if product.metafields.custom.double_mode_benefits %}
+            {{ product.metafields.custom.double_mode_benefits }}
+          {% else %}
+            <ul>
+              <li>Monthly delivery of 60 servings</li>
+              <li>Free shipping</li>
+              <li>Cancel anytime</li>
+              <li>Nutritionist support</li>
+              <li>15% extra savings</li>
+            </ul>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Add to Cart -->
+      <form action="/cart/add" method="post" enctype="multipart/form-data" id="add-to-cart-form">
+        <input type="hidden" name="id" id="variant-id" value="{{ product.variants.first.id }}">
+        <input type="hidden" name="quantity" value="1" id="quantity-input">
+        
+        <button 
+          type="submit" 
+          class="add-to-cart-btn"
+          id="add-to-cart-btn"
+        >
+          <span class="btn-text">Add to Cart</span>
+          <span class="btn-price" id="btn-price">{{ product.price | money }}</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Product Data for JavaScript -->
+<script type="application/json" id="product-data">
+{
+  "id": {{ product.id }},
+  "title": {{ product.title | json }},
+  "variants": [
+    {% for variant in product.variants %}
+      {
+        "id": {{ variant.id }},
+        "title": {{ variant.title | json }},
+        "option1": {{ variant.option1 | json }},
+        "price": {{ variant.price }},
+        "compare_at_price": {{ variant.compare_at_price | default: variant.price }},
+        "available": {{ variant.available }},
+        "featured_image": {% if variant.featured_image %}{{ variant.featured_image | img_url: '800x800' | json }}{% else %}null{% endif %}
+      }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ],
+  "metafields": {
+    "single_delivery_frequency": {{ product.metafields.custom.single_delivery_frequency | json }},
+    "double_delivery_frequency": {{ product.metafields.custom.double_delivery_frequency | json }}
+  }
+}
+</script>
