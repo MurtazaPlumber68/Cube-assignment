@@ -6,3 +6,45 @@ channel = "stable-24_05"
 
 [deployment]
 run = ["sh", "-c", "Run"]
+
+[workflows]
+runButton = "Run Shopify Dev"
+
+[[workflows.workflow]]
+name = "Run"
+author = 45366677
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "shopify theme dev --store=your-dev-store.myshopify.com"
+
+[[workflows.workflow]]
+name = "Run Shopify Dev"
+author = 45366677
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd cube-theme && shopify theme dev --store=your-dev-store.myshopify.com"
+
+[[workflows.workflow]]
+name = "Install and Run"
+author = 45366677
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd cube-theme"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "shopify theme dev --store=your-dev-store.myshopify.com"

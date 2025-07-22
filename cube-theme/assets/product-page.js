@@ -316,6 +316,212 @@ class ProductPage {
     addToCartBtn.querySelector('.btn-text').textContent = 'Adding...';
     addToCartBtn.disabled = true;
 
+    // Submit the form via fetch
+    fetch('/cart/add.js', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Success - update cart and show success message
+      this.updateCartCount();
+      this.showSuccessMessage();
+      
+      // Reset button state
+      addToCartBtn.querySelector('.btn-text').textContent = originalText;
+      addToCartBtn.disabled = false;
+    })
+    .catch(error => {
+      console.error('Error adding to cart:', error);
+      
+      // Reset button state
+      addToCartBtn.querySelector('.btn-text').textContent = originalText;
+      addToCartBtn.disabled = false;
+      
+      // Show error message
+      this.showErrorMessage('Failed to add item to cart. Please try again.');
+    });
+  }
+
+  canAddToCart() {
+    if (this.currentMode === 'single') {
+      return this.selectedFlavors.single !== null;
+    } else {
+      return this.selectedFlavors.first !== null && this.selectedFlavors.second !== null;
+    }
+  }
+
+  getVariantTitle(variantId) {
+    const variant = this.productData.variants.find(v => v.id === variantId);
+    return variant ? variant.title : '';
+  }
+
+  updateCartCount() {
+    // Update cart count in header if present
+    fetch('/cart.js')
+      .then(response => response.json())
+      .then(cart => {
+        const cartCount = document.querySelector('.cart-count');
+        if (cartCount) {
+          cartCount.textContent = cart.item_count;
+        }
+      });
+  }
+
+  showSuccessMessage() {
+    // Show success notification
+    const message = document.createElement('div');
+    message.className = 'success-message';
+    message.textContent = 'Added to cart successfully!';
+    document.body.appendChild(message);
+    
+    setTimeout(() => {
+      message.remove();
+    }, 3000);
+  }
+
+  showErrorMessage(text) {
+    // Show error notification
+    const message = document.createElement('div');
+    message.className = 'error-message';
+    message.textContent = text;
+    document.body.appendChild(message);
+    
+    setTimeout(() => {
+      message.remove();
+    }, 3000);
+  }
+
+  setDefaultSelections() {
+    // Set default mode to single
+    const singleModeRadio = document.querySelector('input[name="subscription-mode"][value="single"]');
+    if (singleModeRadio) {
+      singleModeRadio.checked = true;
+    }
+    
+    // Set initial pricing
+    if (this.productData.variants && this.productData.variants.length > 0) {
+      this.basePrice = this.productData.variants[0].price;
+    }
+  }
+
+  handleModeChange(mode) {
+    this.currentMode = mode;
+    this.updateUI();
+    this.updatePricing();
+    this.updateAddToCartState();
+  }
+
+  handleFlavorSelection(swatch) {
+    const flavorType = swatch.dataset.flavorType;
+    const variantId = parseInt(swatch.dataset.variantId);
+    
+    // Remove active class from siblings
+    swatch.parentElement.querySelectorAll('.flavor-swatch').forEach(s => {
+      s.classList.remove('active');
+    });
+    
+    // Add active class to clicked swatch
+    swatch.classList.add('active');
+    
+    // Update selected flavors
+    if (flavorType === 'single') {
+      this.selectedFlavors.single = variantId;
+    } else if (flavorType === 'first') {
+      this.selectedFlavors.first = variantId;
+    } else if (flavorType === 'second') {
+      this.selectedFlavors.second = variantId;
+    }
+    
+    this.updateAddToCartState();
+  }
+
+  handleThumbnailClick(thumbnail) {
+    const imageUrl = thumbnail.dataset.imageUrl;
+    const mainImage = document.querySelector('.main-image img');
+    
+    if (mainImage && imageUrl) {
+      mainImage.src = imageUrl;
+    }
+    
+    // Update active thumbnail
+    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+    thumbnail.classList.add('active');
+  }
+
+  updateUI() {
+    // Update flavor selectors visibility
+    const singleFlavorSelector = document.querySelector('.single-flavor-selector');
+    const doubleFlavorSelectors = document.querySelector('.double-flavor-selectors');
+    
+    if (this.currentMode === 'single') {
+      if (singleFlavorSelector) singleFlavorSelector.style.display = 'block';
+      if (doubleFlavorSelectors) doubleFlavorSelectors.style.display = 'none';
+    } else {
+      if (singleFlavorSelector) singleFlavorSelector.style.display = 'none';
+      if (doubleFlavorSelectors) doubleFlavorSelectors.style.display = 'block';
+    }
+    
+    // Update "What's Included" content
+    const whatsIncludedContent = document.querySelector('.whats-included-content');
+    if (whatsIncludedContent) {
+      const content = this.currentMode === 'single' 
+        ? this.productData.single_mode_benefits 
+        : this.productData.double_mode_benefits;
+      
+      if (content) {
+        whatsIncludedContent.innerHTML = content;
+      }
+    }
+  }
+
+  updatePricing() {
+    const subscriptionPrice = this.basePrice * this.subscriptionMultiplier;
+    const finalPrice = subscriptionPrice * (1 - this.saleDiscount);
+    const modeMultiplier = this.currentMode === 'double' ? 2 : 1;
+    
+    const finalPriceTotal = finalPrice * modeMultiplier;
+    const originalPriceTotal = this.basePrice * modeMultiplier;
+    
+    // Update price displays
+    const priceElement = document.querySelector('.price');
+    const comparePriceElement = document.querySelector('.compare-price');
+    const savingsElement = document.querySelector('.savings');
+    
+    if (priceElement) {
+      priceElement.textContent = `$${(finalPriceTotal / 100).toFixed(2)}`;
+    }
+    
+    if (comparePriceElement) {
+      comparePriceElement.textContent = `$${(originalPriceTotal / 100).toFixed(2)}`;
+    }
+    
+    if (savingsElement) {
+      const savingsPercent = Math.round((1 - finalPriceTotal / originalPriceTotal) * 100);
+      savingsElement.textContent = `Save ${savingsPercent}%`;
+    }
+  }
+
+  updateAddToCartState() {
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    const canAdd = this.canAddToCart();
+    
+    if (addToCartBtn) {
+      addToCartBtn.disabled = !canAdd;
+      addToCartBtn.querySelector('.btn-text').textContent = canAdd 
+        ? 'Add to Cart' 
+        : 'Select Flavors';
+    }
+  }
+}
+
+// Initialize the product page when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.querySelector('.product-page')) {
+    new ProductPage();
+  }
+});
+
     // Submit via AJAX
     fetch('/cart/add.js', {
       method: 'POST',

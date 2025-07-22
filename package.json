@@ -1,0 +1,21 @@
+
+{
+  "name": "cube-assignment",
+  "version": "1.0.0",
+  "description": "Advanced Shopify product page theme with subscription functionality",
+  "main": "index.js",
+  "scripts": {
+    "dev": "shopify theme dev",
+    "build": "shopify theme package",
+    "deploy": "shopify theme push",
+    "pull": "shopify theme pull",
+    "serve": "shopify theme serve"
+  },
+  "keywords": ["shopify", "theme", "ecommerce", "subscription"],
+  "author": "Cube Assignment",
+  "license": "MIT",
+  "devDependencies": {
+    "@shopify/cli": "^3.50.0",
+    "@shopify/theme": "^3.50.0"
+  }
+}
